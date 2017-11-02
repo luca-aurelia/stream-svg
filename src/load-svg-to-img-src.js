@@ -1,5 +1,6 @@
 import oboe from 'oboe'
 import queryString from 'query-string'
+import includes from 'lodash.includes'
 
 // Holds a group of svg path objects. We keep them together because they'll all
 // be rendered at the same time.
@@ -43,15 +44,7 @@ class Renderer {
     return 'data:image/svg+xml,' + uriPayload;
   }
   constructor (img) {
-    this.svgStart = `
-    <svg viewBox="0 0 984 1065" height="1065.0pt" width="984.0pt" xmlns="http://www.w3.org/2000/svg" version="1.1">
-      <style type="text/css">
-        <![CDATA[
-          path:hover {
-            transform: rotate(45deg);
-          }
-        ]]>
-      </style>`
+    this.svgStart = `<svg viewBox="0 0 984 1065" height="1065.0pt" width="984.0pt" xmlns="http://www.w3.org/2000/svg" version="1.1">`
     this.paths = ''
     this.svgEnd = `</svg>`
     this.img = img
@@ -72,8 +65,12 @@ class RenderManager {
     this.currentBatch = new Batch()
     this.renderQueue = []
     this.renderer = new Renderer(img)
+    this.done = false
   }
   addToBatch (path) {
+    if (this.done) {
+      throw new Error('done() was already called on this RenderManager. Can\'t add more paths.')
+    }
     this.currentBatch.push(path)
     if (this.currentBatch.complete) {
       this.renderQueue.push(this.currentBatch)
@@ -81,14 +78,22 @@ class RenderManager {
     }
   }
   startRenderLoop () {
+    clearInterval(this.renderLoopIntervalId)
     const renderNextBatch = () => this.renderNextBatch()
-    setInterval(renderNextBatch, 100)
+    this.renderLoopIntervalId = setInterval(renderNextBatch, 100)
   }
   renderNextBatch () {
     const nextBatch = this.renderQueue.shift()
     if (nextBatch) {
       this.renderer.render(nextBatch)
     }
+  }
+  done () {
+    const currentBatchInRenderQueue = includes(this.renderQueue, this.currentBatch)
+    if (!currentBatchInRenderQueue) {
+      this.renderQueue.push(this.currentBatch)
+    }
+    this.done = true
   }
 }
 
@@ -114,7 +119,7 @@ function loadSvgToImgSrc (img, url) {
     // This event listener (gotNode) gets called whenever Oboe gets a complete
     // element of the array from the network.
     .on('node', '*', gotNode)
-    .done(() => console.log('Finished streaming paths from sorted-paths.json.'))
+    .done(() => manager.done())
 }
 
 export default loadSvgToImgSrc
