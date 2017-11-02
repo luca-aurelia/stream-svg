@@ -97,7 +97,7 @@ class RenderManager {
   }
 }
 
-function loadSvgToImgSrc (img, url) {
+function loadSvg (img, url) {
   const manager = new RenderManager(img)
   manager.startRenderLoop()
   const gotNode = node => {
@@ -122,4 +122,4 @@ function loadSvgToImgSrc (img, url) {
     .done(() => manager.done())
 }
 
-export default loadSvgToImgSrc
+export default loadSvg

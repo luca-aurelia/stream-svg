@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
-import loadSvgToImgSrc from './load-svg-to-img-src'
+import loadSvg from './load-svg'
 
 class App extends Component {
   constructor () {
     super()
   }
   componentDidMount () {
-    loadSvgToImgSrc(this.img, '/sorted-paths.json')
+    loadSvg(this.img, '/sorted-paths.json')
   }
   render() {
     return <div>
